@@ -1,0 +1,554 @@
+/* Tiptap / ProseMirror writing surface
+   Keep this file focused on document rendering, never app chrome. */
+
+.editor-surface {
+  --editor-font-size: 17px;
+  --editor-line-height: 1.72;
+  --editor-measure: 72ch;
+}
+
+.prose-editor {
+  color: var(--foreground);
+  font-size: var(--editor-font-size, 17px);
+  line-height: var(--editor-line-height, 1.72);
+  letter-spacing: -0.003em;
+  outline: none;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  caret-color: var(--primary);
+}
+
+.prose-editor > * + * {
+  margin-top: 0.85em;
+}
+
+.prose-editor p {
+  margin: 0;
+}
+
+.prose-editor p.is-editor-empty:first-child::before,
+.prose-editor .is-empty::before {
+  color: var(--muted-foreground);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  opacity: 0.75;
+}
+
+.prose-editor h1,
+.prose-editor h2,
+.prose-editor h3,
+.prose-editor h4 {
+  color: var(--foreground);
+  font-weight: 620;
+  letter-spacing: -0.018em;
+  line-height: 1.25;
+  margin: 1.6em 0 0.45em;
+  scroll-margin-top: 5rem;
+}
+.prose-editor h1 {
+  font-size: 1.72em;
+  margin-top: 1.2em;
+}
+.prose-editor h2 {
+  font-size: 1.38em;
+  padding-bottom: 0.22em;
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+}
+.prose-editor h3 {
+  font-size: 1.16em;
+}
+.prose-editor h4 {
+  font-size: 1em;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.82em;
+}
+.prose-editor > h1:first-child,
+.prose-editor > h2:first-child,
+.prose-editor > h3:first-child {
+  margin-top: 0;
+}
+
+/* Folding gutter */
+.prose-editor > :is(h1, h2, h3, h4) {
+  position: relative;
+}
+.prose-editor .fold-toggle {
+  position: absolute;
+  left: -1.55rem;
+  top: 0.32em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 4px;
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 0.62rem;
+  line-height: 1;
+  opacity: 0.32;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 110ms ease, background-color 110ms ease, color 110ms ease;
+}
+.prose-editor > :is(h1, h2, h3, h4):hover .fold-toggle,
+.prose-editor .fold-toggle:focus-visible {
+  opacity: 1;
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+.prose-editor .fold-toggle[data-folded="true"] {
+  opacity: 0.75;
+  color: var(--primary);
+}
+.prose-editor .fold-hidden {
+  display: none;
+}
+
+.prose-editor strong {
+  font-weight: 650;
+}
+.prose-editor em {
+  font-style: italic;
+}
+.prose-editor s {
+  text-decoration-thickness: 1.5px;
+  opacity: 0.75;
+}
+.prose-editor u {
+  text-decoration-color: color-mix(in oklab, var(--primary) 55%, transparent);
+  text-underline-offset: 2px;
+}
+
+.prose-editor a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, var(--primary) 40%, transparent);
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.prose-editor a:hover {
+  text-decoration-color: var(--primary);
+}
+
+.prose-editor ul,
+.prose-editor ol {
+  padding-left: 1.45em;
+  margin: 0.35em 0;
+}
+.prose-editor ul {
+  list-style: disc;
+}
+.prose-editor ul ul {
+  list-style: circle;
+}
+.prose-editor ul ul ul {
+  list-style: square;
+}
+.prose-editor ol {
+  list-style: decimal;
+}
+.prose-editor li {
+  margin: 0.18em 0;
+  padding-left: 0.15em;
+}
+.prose-editor li > p {
+  margin: 0;
+}
+.prose-editor li::marker {
+  color: var(--muted-foreground);
+}
+.prose-editor li > ul,
+.prose-editor li > ol {
+  margin-top: 0.15em;
+  margin-bottom: 0.15em;
+}
+
+.prose-editor ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0.1em;
+}
+.prose-editor ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55em;
+}
+.prose-editor ul[data-type="taskList"] li > label {
+  display: flex;
+  align-items: center;
+  padding-top: 0.32em;
+  user-select: none;
+}
+.prose-editor ul[data-type="taskList"] li > div {
+  flex: 1;
+  min-width: 0;
+}
+.prose-editor input[type="checkbox"] {
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.prose-editor input[type="checkbox"]:checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.prose-editor input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  inset: 1px 3px 3px 3px;
+  border: solid var(--primary-foreground);
+  border-width: 0 0 2px 2px;
+  transform: rotate(-45deg) translateY(-1px);
+}
+.prose-editor li[data-checked="true"] > div {
+  color: var(--muted-foreground);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in oklab, var(--muted-foreground) 40%, transparent);
+}
+
+.prose-editor blockquote {
+  border-left: 2px solid color-mix(in oklab, var(--primary) 55%, transparent);
+  padding: 0.1em 0 0.1em 1em;
+  color: color-mix(in oklab, var(--foreground) 82%, transparent);
+  margin-left: 0;
+}
+.prose-editor blockquote p + p {
+  margin-top: 0.5em;
+}
+
+.prose-editor hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.8em 0;
+}
+
+.prose-editor code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--code-bg);
+  border: 1px solid color-mix(in oklab, var(--border) 65%, transparent);
+  border-radius: 4px;
+  padding: 0.1em 0.32em;
+  letter-spacing: -0.01em;
+}
+
+.prose-editor pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.95em 1.1em;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.62;
+  margin: 1em 0;
+  tab-size: 2;
+}
+.prose-editor pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+  letter-spacing: 0;
+  white-space: pre;
+}
+.prose-editor pre code .hljs-comment,
+.prose-editor pre code .hljs-quote {
+  color: oklch(0.6 0.03 140);
+  font-style: italic;
+}
+.prose-editor pre code .hljs-keyword,
+.prose-editor pre code .hljs-selector-tag,
+.prose-editor pre code .hljs-literal,
+.prose-editor pre code .hljs-section {
+  color: oklch(0.72 0.1 55);
+}
+.prose-editor pre code .hljs-string,
+.prose-editor pre code .hljs-regexp,
+.prose-editor pre code .hljs-addition {
+  color: oklch(0.7 0.09 145);
+}
+.prose-editor pre code .hljs-number,
+.prose-editor pre code .hljs-symbol,
+.prose-editor pre code .hljs-bullet {
+  color: oklch(0.74 0.1 85);
+}
+.prose-editor pre code .hljs-title,
+.prose-editor pre code .hljs-title.function_,
+.prose-editor pre code .hljs-type,
+.prose-editor pre code .hljs-class {
+  color: oklch(0.76 0.08 235);
+}
+.prose-editor pre code .hljs-attr,
+.prose-editor pre code .hljs-attribute,
+.prose-editor pre code .hljs-variable,
+.prose-editor pre code .hljs-template-variable {
+  color: oklch(0.78 0.07 300);
+}
+.prose-editor pre code .hljs-built_in,
+.prose-editor pre code .hljs-meta {
+  color: oklch(0.72 0.08 200);
+}
+.prose-editor pre code .hljs-deletion {
+  color: oklch(0.68 0.15 25);
+}
+.prose-editor pre code .hljs-emphasis {
+  font-style: italic;
+}
+.prose-editor pre code .hljs-strong {
+  font-weight: 700;
+}
+
+:root:not(.dark) .prose-editor pre code .hljs-comment,
+:root:not(.dark) .prose-editor pre code .hljs-quote {
+  color: oklch(0.52 0.03 140);
+}
+:root:not(.dark) .prose-editor pre code .hljs-keyword,
+:root:not(.dark) .prose-editor pre code .hljs-selector-tag,
+:root:not(.dark) .prose-editor pre code .hljs-literal,
+:root:not(.dark) .prose-editor pre code .hljs-section {
+  color: oklch(0.46 0.1 45);
+}
+:root:not(.dark) .prose-editor pre code .hljs-string,
+:root:not(.dark) .prose-editor pre code .hljs-regexp,
+:root:not(.dark) .prose-editor pre code .hljs-addition {
+  color: oklch(0.43 0.09 150);
+}
+:root:not(.dark) .prose-editor pre code .hljs-number,
+:root:not(.dark) .prose-editor pre code .hljs-symbol,
+:root:not(.dark) .prose-editor pre code .hljs-bullet {
+  color: oklch(0.48 0.1 80);
+}
+:root:not(.dark) .prose-editor pre code .hljs-title,
+:root:not(.dark) .prose-editor pre code .hljs-title.function_,
+:root:not(.dark) .prose-editor pre code .hljs-type,
+:root:not(.dark) .prose-editor pre code .hljs-class {
+  color: oklch(0.45 0.1 245);
+}
+:root:not(.dark) .prose-editor pre code .hljs-attr,
+:root:not(.dark) .prose-editor pre code .hljs-attribute,
+:root:not(.dark) .prose-editor pre code .hljs-variable,
+:root:not(.dark) .prose-editor pre code .hljs-template-variable {
+  color: oklch(0.46 0.1 305);
+}
+
+/* Tables */
+.prose-editor .tableWrapper {
+  overflow-x: auto;
+  margin: 1em 0;
+}
+.prose-editor table {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
+  overflow: hidden;
+  font-size: 0.92em;
+}
+.prose-editor th,
+.prose-editor td {
+  border: 1px solid var(--border);
+  padding: 0.45em 0.65em;
+  vertical-align: top;
+  position: relative;
+  min-width: 3em;
+}
+.prose-editor th {
+  background: color-mix(in oklab, var(--muted) 65%, transparent);
+  font-weight: 600;
+  text-align: left;
+}
+.prose-editor td > p,
+.prose-editor th > p {
+  margin: 0;
+}
+.prose-editor .selectedCell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in oklab, var(--primary) 14%, transparent);
+  pointer-events: none;
+}
+.prose-editor .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: color-mix(in oklab, var(--primary) 55%, transparent);
+  pointer-events: none;
+}
+.prose-editor.resize-cursor {
+  cursor: col-resize;
+}
+
+/* Images */
+.prose-editor img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+  margin: 1em 0;
+}
+.prose-editor img.ProseMirror-selectednode {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+/* Callouts */
+.prose-editor .callout {
+  display: flex;
+  gap: 0.7em;
+  border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+  border-left-width: 3px;
+  border-radius: 7px;
+  padding: 0.8em 1em;
+  margin: 1em 0;
+  background: color-mix(in oklab, var(--muted) 45%, transparent);
+}
+.prose-editor .callout[data-variant="info"] {
+  border-left-color: var(--info);
+}
+.prose-editor .callout[data-variant="warning"] {
+  border-left-color: var(--warning);
+}
+.prose-editor .callout[data-variant="success"] {
+  border-left-color: var(--success);
+}
+.prose-editor .callout[data-variant="danger"] {
+  border-left-color: var(--destructive);
+}
+.prose-editor .callout-content > * + * {
+  margin-top: 0.4em;
+}
+.prose-editor .callout-icon {
+  flex: none;
+  margin-top: 0.18em;
+  color: var(--muted-foreground);
+}
+.prose-editor .callout[data-variant="info"] .callout-icon {
+  color: var(--info);
+}
+.prose-editor .callout[data-variant="warning"] .callout-icon {
+  color: var(--warning);
+}
+.prose-editor .callout[data-variant="success"] .callout-icon {
+  color: var(--success);
+}
+.prose-editor .callout[data-variant="danger"] .callout-icon {
+  color: var(--destructive);
+}
+
+/* Note links */
+.prose-editor .note-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28em;
+  padding: 0.05em 0.4em;
+  border-radius: 4px;
+  background: color-mix(in oklab, var(--primary) 12%, transparent);
+  color: var(--primary);
+  border: 1px solid color-mix(in oklab, var(--primary) 22%, transparent);
+  font-size: 0.92em;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.prose-editor .note-link:hover {
+  background: color-mix(in oklab, var(--primary) 18%, transparent);
+}
+.prose-editor .note-link[data-broken="true"] {
+  background: color-mix(in oklab, var(--destructive) 12%, transparent);
+  border-color: color-mix(in oklab, var(--destructive) 30%, transparent);
+  color: var(--destructive);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+.prose-editor .note-link::before {
+  content: "";
+  width: 0.42em;
+  height: 0.42em;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.7;
+}
+
+/* Inline formatting helpers */
+.prose-editor mark {
+  background: color-mix(in oklab, var(--warning) 30%, transparent);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 0.1em;
+}
+
+.prose-editor .ProseMirror-gapcursor::after {
+  border-top-color: var(--foreground);
+}
+
+.prose-editor .ProseMirror-selectednode {
+  outline: 2px solid color-mix(in oklab, var(--primary) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.prose-editor .ProseMirror-hideselection *::selection {
+  background: transparent;
+}
+
+/* Slash menu */
+.slash-menu {
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-overlay);
+  padding: 4px;
+  width: 260px;
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 60;
+}
+.slash-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.slash-menu-item[data-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+.slash-menu-group {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted-foreground);
+  padding: 8px 8px 4px;
+}
+
+/* Search highlight */
+.search-mark {
+  background: color-mix(in oklab, var(--primary) 28%, transparent);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 0.08em;
+}
+
+/* Focus mode */
+.focus-mode .prose-editor {
+  --editor-measure: 74ch;
+}
